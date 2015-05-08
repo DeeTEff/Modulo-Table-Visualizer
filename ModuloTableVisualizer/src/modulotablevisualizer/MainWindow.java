@@ -27,7 +27,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JButton;
-import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
 import java.awt.event.ActionListener;
@@ -35,13 +34,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Random;
-import java.util.Vector;
 
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
@@ -67,13 +62,10 @@ public class MainWindow extends Canvas {
 
 	ModuloTable moduloTable = new ModuloTable();
 
-	int lineCount = 0;
-	int colCount = 0;
-	int largest = 0;
+
 	int scale = 1;
 	int disp = 0;
 	int randomizer = 1;
-	int sleeper = 0;
 	int numSquare = 1;
 	int numReps = 1;
 	int countFixer = 1;
@@ -84,7 +76,6 @@ public class MainWindow extends Canvas {
 	JLabel lblTableval = new JLabel("none");
 
 	boolean doRandomizer = false;
-	boolean firstRoll = true;
 	Random rand = new Random();
 	private JFrame frame;
 	private JTextField textField;
@@ -208,7 +199,7 @@ public class MainWindow extends Canvas {
 				if (numSquare <= 0)
 					numSquare = 1;
 				numReps = (int) Math.pow(2, numSquare);
-				ResizeAndRepaint();
+				resizeCanvas();
 			}
 		});
 		textField.setText("1");
@@ -230,7 +221,7 @@ public class MainWindow extends Canvas {
 				scale = slider.getValue();
 				if (scale == 0)
 					scale = 1;
-				ResizeAndRepaint();
+				resizeCanvas();
 			}
 		});
 		slider.setPaintTicks(true);
@@ -295,7 +286,7 @@ public class MainWindow extends Canvas {
 		JButton btnOpenSelected = new JButton("Open Selected");
 		btnOpenSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ParseFile((File) list.getSelectedValue());
+				parseFile((File) list.getSelectedValue());
 			}
 		});
 		btnOpenSelected.setBounds(294, 85, 117, 29);
@@ -351,7 +342,7 @@ public class MainWindow extends Canvas {
 		int returnVal = fc.showOpenDialog(null);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
-			ParseFile(file);
+			parseFile(file);
 		}
 	}
 
@@ -380,90 +371,23 @@ public class MainWindow extends Canvas {
 		}
 	}
 
-	public void ResizeAndRepaint() {
-		countFixer = 1;
-		if (lineCount > colCount) {
-			// factor ratio to prevent black bars from non-square shape
-			countFixer = lineCount / colCount;
-		}
-		pixelCanvas.setBounds(450, 10, (colCount * scale * numSquare),
-				numSquare * largest * scale);
-
+	public void resizeCanvas() {
+		pixelCanvas.setBounds(450, 10, (moduloTable.modNumber * scale * numSquare),
+				numSquare * moduloTable.modNumber * scale);
 	}
 
-	public void ParseFile(File file) {
-		try {
-			// parse the file.
-			largest = 0;
-			lineCount = 0;
-
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			String line;
-			
-			
-			boolean broken = false;
-			while ((line = br.readLine()) != null) {
-				if (line.trim().length() == 0)
-					continue;
-				colCount = 0;
-				String[] crap = { "(", ")", ",", ";" };
-				for (String replace : crap) {
-					line = line.replace(replace, " ").trim();
-				}
-				// This replaces any multiple spaces with a single space
-				while (line.contains("  ")) {
-					line = line.replace("  ", " ");
-				}
-				String[] values = line.split(" ");
-				if (line.equals(""))
-					continue;
-
-				
-				//TODO: remove variable largest and other artifacts from array implementation
-				largest = values.length;
-				
-				moduloTable.tableColor.add(new Vector<Color>());
-				moduloTable.tableInt.add(new Vector<Integer>());
-				// convert each line to integers
-				for (int index = 0; index < values.length; index++) {
-					try {
-
-						moduloTable.tableInt.get(lineCount).add((Integer
-								.parseInt(values[index].trim()) * (16777215)) / (values.length));
-					} catch (Exception e) {
-						broken = true;
-						JOptionPane.showMessageDialog(null,
-								"Failed to parse mod file",
-								"" + "", JOptionPane.INFORMATION_MESSAGE);
-						break;
-					}
-				}
-				if (broken)
-					break;
-				colCount = values.length;
-				lineCount++;
-			}
-			br.close();
-		} catch (IOException e1) {
-			JOptionPane.showMessageDialog(null,
-					"please open a properly formatted .mod file", "" + "",
-					JOptionPane.INFORMATION_MESSAGE);
-
-		}
-		// tableLoc
-		lblTableval.setText(Integer.toString(colCount + 1));
-
-		firstRoll = true;
-		// draw to pixel frame
-		pixelCanvas.setBounds(450, 10, (colCount * scale * numSquare),
-				numSquare * largest * scale);
+	public void parseFile(File file) {
+		moduloTable = new ModuloTable();
+		moduloTable.parseFile(file);
+		lblTableval.setText(Integer.toString(moduloTable.modNumber + 1));
+		resizeCanvas();
+		AssignColors();
 		pixelCanvas.repaint();
-
 	}
 
 	public void AssignColors() {
-		for (int x = 0; x < colCount; x++) {
-			for (int y = 0; y < largest; y++) {
+		for (int x = 0; x < moduloTable.modNumber; x++) {
+			for (int y = 0; y < moduloTable.modNumber; y++) {
 				moduloTable.tableColor.get(x).add(y, new Color(moduloTable.tableInt.get(x).get(y) * randomizer % 16777215));
 			}
 		}
@@ -480,8 +404,7 @@ public class MainWindow extends Canvas {
 		@Override
 		public void paint(Graphics g) {
 
-			if (doRandomizer || firstRoll) {
-				firstRoll = false;
+			if (doRandomizer) {
 				randomizer = rand.nextInt();
 				AssignColors();
 			}
@@ -502,17 +425,17 @@ public class MainWindow extends Canvas {
 			// duplicate the image n^2 times
 			// else
 			// {
-			for (int x = 0; x < (colCount * scale); x += scale) {
-				for (int y = 0; y < largest * scale; y += scale) {
+			for (int x = 0; x < (moduloTable.modNumber * scale); x += scale) {
+				for (int y = 0; y < moduloTable.modNumber * scale; y += scale) {
 					g.setColor(moduloTable.tableColor.get(x/scale).get(y/scale));
 					// repeat current pixel n^2 times
 					for (int gr = 0; gr < numSquare; gr++) {
 						// fill each row
 						for (int gc = 0; gc < numSquare; gc++) {
 							// fill each column
-							g.fillRect(x + gr * colCount * scale, y + gc
-									* largest * scale, (x) / (scale * colCount)
-									+ scale, (y / (scale * largest)) + scale);
+							g.fillRect(x + gr * moduloTable.modNumber * scale, y + gc
+									* moduloTable.modNumber * scale, (x) / (scale * moduloTable.modNumber)
+									+ scale, (y / (scale * moduloTable.modNumber)) + scale);
 						}
 					}
 				}
