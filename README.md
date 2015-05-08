@@ -13,8 +13,6 @@ The Modulo Tables tab allows the user to select a working directory and quickly 
 
 To save a modulo table as .png, click save modulo table and whatever is currently drawn on the screen will be saved as a .png in a directory of your choice.
 
-Currently, this program is limited to modulo tables with max values < 1000
-
 # Settings
 -----------------------------------------------------------
 Randomize Colors:
