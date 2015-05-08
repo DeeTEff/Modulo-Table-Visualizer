@@ -67,9 +67,6 @@ public class MainWindow extends Canvas {
 
 	ModuloTable moduloTable = new ModuloTable();
 
-	int[][] tableArray = new int[1000][1000];
-	int[][] tableAdj = new int[1000][1000];
-	Color[][] color = new Color[1000][1000];
 	int lineCount = 0;
 	int colCount = 0;
 	int largest = 0;
@@ -208,8 +205,8 @@ public class MainWindow extends Canvas {
 				} catch (Exception name) {
 					numSquare = 1;
 				}
-				if (numSquare == 0)
-					numSquare++;
+				if (numSquare <= 0)
+					numSquare = 1;
 				numReps = (int) Math.pow(2, numSquare);
 				ResizeAndRepaint();
 			}
@@ -399,15 +396,11 @@ public class MainWindow extends Canvas {
 			// parse the file.
 			largest = 0;
 			lineCount = 0;
-			for (int i = 0; i < 1000; i++) {
-				for (int j = 0; j < 1000; j++) {
-					tableArray[i][j] = 0;
-					tableAdj[i][j] = 0;
-				}
-			}
 
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String line;
+			
+			
 			boolean broken = false;
 			while ((line = br.readLine()) != null) {
 				if (line.trim().length() == 0)
@@ -426,23 +419,21 @@ public class MainWindow extends Canvas {
 					continue;
 
 				
-				//TODO: remove variable largest
+				//TODO: remove variable largest and other artifacts from array implementation
 				largest = values.length;
 				
-				moduloTable.table.add(new Vector<Integer>());
-
-
+				moduloTable.tableColor.add(new Vector<Color>());
+				moduloTable.tableInt.add(new Vector<Integer>());
 				// convert each line to integers
 				for (int index = 0; index < values.length; index++) {
 					try {
-						tableArray[index][lineCount] = Integer
-								.parseInt(values[index].trim());
-						//moduloTable.table.elementAt(index).add(Integer
-						//		.parseInt(values[index].trim()));
+
+						moduloTable.tableInt.get(lineCount).add((Integer
+								.parseInt(values[index].trim()) * (16777215)) / (values.length));
 					} catch (Exception e) {
 						broken = true;
 						JOptionPane.showMessageDialog(null,
-								"please open a properly formatted .mod file",
+								"Failed to parse mod file",
 								"" + "", JOptionPane.INFORMATION_MESSAGE);
 						break;
 					}
@@ -461,12 +452,7 @@ public class MainWindow extends Canvas {
 		}
 		// tableLoc
 		lblTableval.setText(Integer.toString(colCount + 1));
-		// convert to RGB array
-		for (int i = 0; i < colCount; i++) {
-			for (int j = 0; j < largest; j++) {
-				tableAdj[i][j] = (((tableArray[i][j]) * (16777215)) / (largest));
-			}
-		}
+
 		firstRoll = true;
 		// draw to pixel frame
 		pixelCanvas.setBounds(450, 10, (colCount * scale * numSquare),
@@ -478,7 +464,7 @@ public class MainWindow extends Canvas {
 	public void AssignColors() {
 		for (int x = 0; x < colCount; x++) {
 			for (int y = 0; y < largest; y++) {
-				color[x][y] = new Color(tableAdj[x][y] * randomizer % 16777215);
+				moduloTable.tableColor.get(x).add(y, new Color(moduloTable.tableInt.get(x).get(y) * randomizer % 16777215));
 			}
 		}
 	}
@@ -518,7 +504,7 @@ public class MainWindow extends Canvas {
 			// {
 			for (int x = 0; x < (colCount * scale); x += scale) {
 				for (int y = 0; y < largest * scale; y += scale) {
-					g.setColor(color[x / scale][y / scale]);
+					g.setColor(moduloTable.tableColor.get(x/scale).get(y/scale));
 					// repeat current pixel n^2 times
 					for (int gr = 0; gr < numSquare; gr++) {
 						// fill each row

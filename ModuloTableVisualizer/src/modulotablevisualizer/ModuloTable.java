@@ -1,19 +1,31 @@
 package modulotablevisualizer;
 
+import java.awt.Color;
 import java.util.Vector;
 
 public class ModuloTable {
 	
-	Vector<Vector<Integer>> table = new Vector<Vector<Integer>>();
+	Vector<Vector<Color>> tableColor = new Vector<Vector<Color>>();
 	
-	public void setTable(Vector<Vector<Integer>> t)
+	Vector<Vector<Integer>> tableInt = new Vector<Vector<Integer>>();
+
+	
+	public Vector<Vector<Integer>> getTableInt() {
+		return tableInt;
+	}
+
+	public void setTableInt(Vector<Vector<Integer>> tableInt) {
+		this.tableInt = tableInt;
+	}
+
+	public void setTable(Vector<Vector<Color>> t)
 	{
-		table = t;
+		tableColor = t;
 	}
 	
-	public Vector<Vector<Integer>> getTable()
+	public Vector<Vector<Color>> getTable()
 	{
-		return table;
+		return tableColor;
 	}
 
 }
